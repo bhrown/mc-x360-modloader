@@ -1,0 +1,33 @@
+Patching xex with TU:
+	Base game / TU0 from Minecraft Wiki: https://archive.org/download/minecraft-xbox-360-edition-1.66.0033.0-partner-net-leak.-7z/Minecraft%20Xbox%20360%20Edition%200.66.0062.0.7z
+	Download TU from Minecraft Wiki
+	Use Xenia Canary 'Install Content' on TU file, contents will extract to "xenia_canary_windows\content\0000000000000000\584111F7\000B0000\TUx"
+	Copy and combine files from TU0 and target TU in 'game' folder
+	Run ./xextool.exe -o game/extract.xex -u -p game/default.xexp -eu -cu extract/default.xex
+	Verify working extract.xex in Xenia
+
+Patching xex with mod loader:
+    Build mod loader with build.bat
+    Load build/loader.obj into IDA
+    Run 1_dump_fun.py in IDA
+    Load TU4.xex into IDA
+    Run 2_import_fun.py IN IDA (copy and paste into 'Script command' window)
+    Edit -> Patch program -> Apply patch to imput file -> OK
+
+Running in Xenia Canary:
+    Use 22a2709_canary_experimental to disable game hash verification https://github.com/xenia-canary/xenia-canary/releases/tag/a34944e
+    Use patch in xenia/ for debug menu (set apply_patches = true and copy to xenia_install_dir/patches/)
+    Copy build/module.xex to game/
+    Open game/TU4.xex in Xenia
+
+Version tracking process:
+	Load latest/default_no_pdb.xex and latest/default.xex in IDA
+	Load latest/default.pdb for latest/default.xex, not for latest/default_no_pdb.xex
+	In IDA latest/default_no_pdb.xex, run export_fun_pre.py
+	   IDA latest/default.xex, run export_fun_post.py
+	   IDA latest/default_no_pdb.xex, run import_fun_renamed.py
+	   IDA latest/default_no_pdb.xex, export BinDiff
+	   IDA TU18/default_no_pdb.xex, export BinDiff
+	BinDiff with TU18/default_no_pdb.BinExport as primary
+	In IDA TU18/default_no_pdb.xex, run bindiff_import.py
+	Repeat for TU17, TU16 ...

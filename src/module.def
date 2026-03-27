@@ -1,0 +1,4 @@
+EXPORTS
+    LookupByReturnAddr @1
+    HellDimension_getFogColor1 @2
+    HellDimension_getFogColor2 @3
