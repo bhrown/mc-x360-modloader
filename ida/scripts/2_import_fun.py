@@ -1,7 +1,3 @@
-# 2_import_fun.py
-#
-# Path loader functions and calls into program
-
 import idc
 import idaapi
 import ida_bytes
@@ -9,9 +5,9 @@ import ida_funcs
 import ida_name
 import json
 
-EXPORT_PATH  = r"F:\path\to\func_export.json"
-CAVE_START   = 0x82610A78
-CAVE_END     = 0x82610CA4
+EXPORT_PATH  = r"F:\minecraft-lce\patch\func_export.json"
+CAVE_START   = 0x82610A78  # your .cave section address
+CAVE_END     = 0x82610CA4  # end of .cave section
 
 with open(EXPORT_PATH) as f:
     funcs = json.load(f)
@@ -28,10 +24,12 @@ for name, info in funcs.items():
     addr_map[name] = cursor
     cursor += size
 
+# Zero remaining
 remaining = CAVE_END - cursor
 if remaining > 0:
     ida_bytes.patch_bytes(cursor, b"\x00" * remaining)
 
+# Step 1 - delete all existing functions and items in cave range
 print("Clearing existing functions in cave range...")
 ea = CAVE_START
 while ea < CAVE_END:
@@ -41,6 +39,7 @@ while ea < CAVE_END:
     idc.del_items(ea, idc.DELIT_SIMPLE, 4)
     ea += 4
 
+# Step 2 - redefine code and functions
 print("Defining functions:")
 for name, addr in addr_map.items():
     size = funcs[name]["size"]
@@ -57,16 +56,15 @@ for name, addr in addr_map.items():
     idc.set_func_cmt(addr, "Imported from loader.obj", 1)
     print(f"  {name:<20} 0x{addr:08X} size=0x{size:X}")
 
+# Step 3 - reanalysis
 print("Reanalyzing...")
 idc.plan_and_wait(CAVE_START, CAVE_END)
 idaapi.auto_wait()
 
-# patch nop at 0x822EA738 with bl loadMod
+# Patch nop at 0x822EA738 with bl loadMod
 PATCH_ADDR  = 0x822EA738
 LOAD_MOD_ADDR = addr_map["loadMod"]
 
-# compute bl offset
-# bl encoding: bits 0-5 = 0b010010, bits 6-29 = signed offset>>2, bit 30 = AA, bit 31 = LK
 offset = LOAD_MOD_ADDR - PATCH_ADDR
 li     = ((offset >> 2) & 0xFFFFFF) << 2
 bl_insn = 0x48000001 | li

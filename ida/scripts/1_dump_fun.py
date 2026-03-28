@@ -1,17 +1,14 @@
-# 1_dump_fun.py
-#
-# IDA Export function locations from loader.obj
-
 import idautils
 import idc
 import json
 import os
 
-EXPORT_PATH = r"F:\path\to\func_export.json"
+EXPORT_PATH = r"F:\minecraft-lce\patch\func_export.json"
 
 funcs_to_export = [
     "loadMod",
     "dispatcher",
+    "dispatcher_bl",
 ]
 
 out = {}

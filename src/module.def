@@ -1,4 +1,5 @@
 EXPORTS
-    LookupByReturnAddr @1
-    HellDimension_getFogColor1 @2
-    HellDimension_getFogColor2 @3
+    mc_ModInit @1
+    mc_LookupByReturnAddr @2
+    mc_HellDimension_getFogColor1 @3
+    mc_HellDimension_getFogColor2 @4
