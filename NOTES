@@ -2,3 +2,6 @@ Source is TU18, build with ContentPackage_NO_TU configuration
 
 latest/default_no_pdb.xex (ContentPackage_NO_TU build) contains 22708 functions
 TU18/default_no_pdb.xex contains 22705
+
+Use xextool.exe -d dump/ extract.xex to dump resources
+Use Xzp Tool to extract dump/media
