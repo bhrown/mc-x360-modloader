@@ -15,7 +15,7 @@ void loadMod() {
     ((void (*)(void))GetProcAddress(mod, (LPCSTR)1))();
 }
 
-void dispatcher() {
+int dispatcher() {
     unsigned int caller;
     unsigned int saved_r3;
     unsigned int fn_addr;
@@ -44,10 +44,27 @@ void dispatcher() {
     }
 }
 
+void* dispatcher_noarg() {
+    unsigned int caller;
+    unsigned int saved_r8;
+    void* fn_addr;
+    __asm {
+        lwz  r11, 0xD8(r1)   // read LR from caller's frame (0x80 + 0x60 - 8)
+        stw  r11, caller
+        stw  r8,  saved_r8
+    }
+
+    IMPORT_FUNC(GetProcAddress, aGetProcAddress)
+    int ordinal = ((int (*)(unsigned int))GetProcAddress(mod, (LPCSTR)2))(caller);
+    fn_addr = (void*)GetProcAddress(mod, (LPCSTR)ordinal);
+
+    return ((void* (*)(void))fn_addr)();
+}
+
 // For bl-style calls (e.g. Dimension__getFogColor which has frame -0x60 and saves LR at var_8)
 // The real caller LR is saved by the intermediate function at 0x60-8 = 0x58 from its r1
 // After dispatcher's own stwu -0x80, that slot is at 0x80+0x58 = 0xD8(r1)
-void dispatcher_bl() {
+int dispatcher_bl() {
     unsigned int caller;
     unsigned int saved_r3;
     unsigned int fn_addr;

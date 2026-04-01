@@ -16,3 +16,8 @@ struct Vec3_double {
 
 DECL_FUNC(Vec3_double*, Vec3_newTemp_double_double_double, double x, double y, double z)
 #define aVec3_newTemp_double_double_double 0x825A2E08
+
+
+
+
+

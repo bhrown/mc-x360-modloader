@@ -17,5 +17,7 @@ def patch(branch_addr, target):
     idc.create_insn(branch_addr)
     print(f"Patched branch at 0x{branch_addr:08X} -> 0x{target:08X}")
 
-patch(0x8261077C, addr_map["dispatcher"]) # Vec3_newTemp_double_double_double in HellDimension::getFogColor
+#patch(0x8261077C, addr_map["dispatcher"]) # Vec3_newTemp_double_double_double in HellDimension::getFogColor
 #patch(0x825ACA90, addr_map["dispatcher_bl"]) # Vec3_newTemp_double_double_double in Dimension::getFogColor
+patch(0x821F29A8, addr_map["dispatcher_noarg"]) # MinecraftWorld_RunStaticCtors in Minecraft::main
+#patch(0x825ADE38, addr_map["dispatcher_noarg"]) # Tile::staticCtor in MinecraftWorld_RunStaticCtors

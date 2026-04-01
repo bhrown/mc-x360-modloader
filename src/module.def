@@ -1,5 +1,6 @@
 EXPORTS
     mc_ModInit @1
     mc_LookupByReturnAddr @2
-    mc_HellDimension_getFogColor1 @3
-    mc_HellDimension_getFogColor2 @4
+    MinecraftWorld_RunStaticCtors @3
+    mc_HellDimension_getFogColor1 @4
+    mc_HellDimension_getFogColor2 @5

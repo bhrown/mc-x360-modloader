@@ -7,8 +7,9 @@ EXPORT_PATH = r"F:\minecraft-lce\patch\func_export.json"
 
 funcs_to_export = [
     "loadMod",
-    "dispatcher",
+    #"dispatcher",
     "dispatcher_bl",
+    "dispatcher_noarg",
 ]
 
 out = {}
