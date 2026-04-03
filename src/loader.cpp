@@ -51,7 +51,6 @@ void* dispatcher_noarg() {
     __asm {
         lwz  r11, 0xD8(r1)   // read LR from caller's frame (0x80 + 0x60 - 8)
         stw  r11, caller
-        stw  r8,  saved_r8
     }
 
     IMPORT_FUNC(GetProcAddress, aGetProcAddress)
