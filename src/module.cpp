@@ -10,6 +10,13 @@ extern "C" int __cdecl DbgPrint(const char* format, ...);
 
 std::unordered_map<unsigned int, int> addr_map;
 
+class Level;
+
+void QuickSoilTile_entityInside(int a1, Level *level, int x, int y, int z, DWORD* entity) {
+    *(double *)(*entity + 112) = *(double *)(*entity + 112) * 1.4;
+    *(double *)(*entity + 128) = *(double *)(*entity + 128) * 1.4;
+}
+
 template<typename Ret, int Offset, typename Args>
 inline Ret vcall(void* obj, Args args) {
     auto fn = *(Ret (**)(void*, Args))(*(DWORD*)obj + Offset);
@@ -21,40 +28,49 @@ inline Ret vaccess(void* obj) {
     return *(Ret*)((unsigned char*)obj + Offset);
 }
 
-template<typename Ret>
-inline Ret vaccess(void* obj, int Offset) {
-    return *(Ret*)((unsigned char*)obj + Offset);
+template<typename T>
+inline T* vaccess(void* obj, int offset) {
+    return (T*)((unsigned char*)obj + offset);
 }
 
 void print_bytes(unsigned char* p) {
-    DbgPrint("quicksoil dump (first 64 bytes):\n");
-
-    for (int i = 0; i < 64; i++) {
-        // Print byte
-        DbgPrint("%02X ", p[i]);
-
-        // Optional: newline every 16 bytes for readability
+    for (int i = 0; i < 8192; i++) {
+        DbgPrint("%02X", p[i]);
         if ((i + 1) % 16 == 0) {
             DbgPrint("\n");
         }
     }
 }
 
-
 int* quicksoil = (int*)malloc(0x78); // v572 = operator new_uint_(0x78u);
 void ml_Tile_staticCtor() {
     DbgPrint("ml_Tile_staticCtor: Entry\n");
+    // void** vtable = (void**)0x82066A74; // find vtable offset for member function 0x82066A74
+    // for (int i = 0; i < 200; i++) {
+    //     if (vtable[i] == (void*)0x825E10D0) {
+    //         DbgPrint("entityInside index = %d\n", i);
+    //         DbgPrint("offset = 0x%X\n", i * 4);
+    //     }
+    // }
     int** tiles = (int**)malloc(0x500); // Tile::tiles = (int)operator new___uint_(0x400u);
     int** items = (int**)malloc(0x2F400); // Item::items = (int)operator new___uint_(0x1F400u);
     std::memcpy(tiles, *(int**)(0x829FFF98), 0x400);
     *(int***)(0x829FFF98) = tiles;
     std::memcpy(items, *(int**)(0x82A0DFFC), 0x1F400);
     *(int***)(0x82A0DFFC) = items;
-    quicksoil = ((int* (*)(int*, int, int, int))0x825E0FA8)(quicksoil, 99, 104, 1); // v573 = HellSandTile::HellSandTile(v572, 88, 104, 1); // 104 is terrain.png texture index
+    quicksoil = ((int* (*)(int*, int, int, int))0x825E0FA8)(quicksoil, 97, 104, 1); // v573 = HellSandTile::HellSandTile(v572, 88, 104, 1); // 104 is terrain.png texture index
     quicksoil = vcall<int*, 44>(quicksoil, 0.5); // v574 = (*(int (__fastcall **)(int, double))(*(_DWORD *)v573 + 44))(v573, 0.5);
     quicksoil = vcall<int*, 20>(quicksoil, *(int*)(0x829FFF94)); // v575 = (int (__fastcall ***)(_DWORD, int))(*(int (__fastcall **)(int, int))(*(_DWORD *)v574 + 20))(v574, Tile::SOUND_SAND);
-    quicksoil = vcall<int*, 0>(quicksoil, 613); // v576 = (**v575)(v575, 614); // strings.xus item name
+    quicksoil = vcall<int*, 0>(quicksoil, 614); // v576 = (**v575)(v575, 614); // strings.xus item name index
     quicksoil = vcall<int*, 308>(quicksoil, 200); // Tile::hellSand = (*(int (__fastcall **)(int, int))(*(_DWORD *)v576 + 308))(v576, 200);
+
+    void** old_vtable = *(void***)quicksoil;
+    // allocate new vtable (size guess: 0x400 bytes is safe)
+    void** new_vtable = (void**)malloc(0x400);
+    memcpy(new_vtable, old_vtable, 0x400);
+    new_vtable[0x118 / 4] = (void*)QuickSoilTile_entityInside;
+    *(void***)quicksoil = new_vtable;
+
     for (int i = 0; i < 0x100; i++) {
         if (tiles[i] != 0 && items[i] == 0) { // if ( *(_DWORD *)(i + Tile::tiles) && !*(_DWORD *)(Item::items + i) )
             int* obj = (int*)malloc(0x48); // v645 = operator new_uint_(0x48u);
@@ -76,10 +92,7 @@ int ml_Recipes_staticCtor(int a1) {
     //
     //	L'#', new ItemInstance(Tile::treeTrunk, 1, 0),
     //	L'S');
-    DbgPrint("ml_Recipes_staticCtor: check 1\n");
     ((void (*)(int*, int*, int, int))0x825383F8)(quicksoil_instance, quicksoil, 1, 1); // ItemInstance(v125, dword_82A0000C, 1, 1);
-    // ((void (*)(int*, int*, int, int))0x825383F8)(quicksoil_instance, *(int**)(0x829FFFDC), 1, 1); // ItemInstance(v125, dword_82A0000C, 1, 1);
-    DbgPrint("ml_Recipes_staticCtor: check 2\n");
     ((void (*)(int, int*, const wchar_t*, const wchar_t*, const wchar_t*, int*, const wchar_t*))0x825C13B8)(a1, quicksoil_instance, L"stzg", L"#", L"#", *(int**)(0x829FFFA4), L"S"); // Recipes::addShapedRecipy(a1, v10, &unk_820611FC, &unk_82038870, 35, Tile::treeTrunk, 83);
     ((void (*)(int))0x825C08F0)(a1); // Recipes::buildRecipeIngredientsArray_void_(a1);
     DbgPrint("ml_Recipes_staticCtor: Return\n");
