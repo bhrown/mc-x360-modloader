@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <xtl.h>
 #include "module.h"
+#include <string>
+#include <cstring>
 
 extern "C" int __cdecl DbgPrint(const char* format, ...);
 
@@ -16,6 +18,11 @@ inline Ret vcall(void* obj, Args args) {
 
 template<typename Ret, int Offset>
 inline Ret vaccess(void* obj) {
+    return *(Ret*)((unsigned char*)obj + Offset);
+}
+
+template<typename Ret>
+inline Ret vaccess(void* obj, int Offset) {
     return *(Ret*)((unsigned char*)obj + Offset);
 }
 
@@ -33,20 +40,50 @@ void print_bytes(unsigned char* p) {
     }
 }
 
-int* quicksoil = new int; // v572 = operator new_uint_(0x78u);
 
+int* quicksoil = (int*)malloc(0x78); // v572 = operator new_uint_(0x78u);
 void ml_Tile_staticCtor() {
     DbgPrint("ml_Tile_staticCtor: Entry\n");
-    quicksoil = ((int* (*)(int*, int, int, int))0x825E0FA8)(quicksoil, 157, 104, 1); // v573 = HellSandTile::HellSandTile(v572, 88, 104, 1);
+    int** tiles = (int**)malloc(0x500); // Tile::tiles = (int)operator new___uint_(0x400u);
+    int** items = (int**)malloc(0x2F400); // Item::items = (int)operator new___uint_(0x1F400u);
+    std::memcpy(tiles, *(int**)(0x829FFF98), 0x400);
+    *(int***)(0x829FFF98) = tiles;
+    std::memcpy(items, *(int**)(0x82A0DFFC), 0x1F400);
+    *(int***)(0x82A0DFFC) = items;
+    quicksoil = ((int* (*)(int*, int, int, int))0x825E0FA8)(quicksoil, 99, 104, 1); // v573 = HellSandTile::HellSandTile(v572, 88, 104, 1); // 104 is terrain.png texture index
     quicksoil = vcall<int*, 44>(quicksoil, 0.5); // v574 = (*(int (__fastcall **)(int, double))(*(_DWORD *)v573 + 44))(v573, 0.5);
     quicksoil = vcall<int*, 20>(quicksoil, *(int*)(0x829FFF94)); // v575 = (int (__fastcall ***)(_DWORD, int))(*(int (__fastcall **)(int, int))(*(_DWORD *)v574 + 20))(v574, Tile::SOUND_SAND);
-    quicksoil = vcall<int*, 0>(quicksoil, 614); // v576 = (**v575)(v575, 614);
+    quicksoil = vcall<int*, 0>(quicksoil, 613); // v576 = (**v575)(v575, 614); // strings.xus item name
+    quicksoil = vcall<int*, 308>(quicksoil, 200); // Tile::hellSand = (*(int (__fastcall **)(int, int))(*(_DWORD *)v576 + 308))(v576, 200);
+    for (int i = 0; i < 0x100; i++) {
+        if (tiles[i] != 0 && items[i] == 0) { // if ( *(_DWORD *)(i + Tile::tiles) && !*(_DWORD *)(Item::items + i) )
+            int* obj = (int*)malloc(0x48); // v645 = operator new_uint_(0x48u);
+            obj = ((int* (*)(int*, int, int))0x825DEB20)(obj, i - 0x100, 1); // v646 = sub_825DEB20(v645, v643 - 256, 1);
+            items[i] = obj; // *(_DWORD *)(Item::items + i) = v646;
+        }
+    }
     DbgPrint("ml_Tile_staticCtor: Quicksoil initialized");
-    DbgPrint("ml_Tile_staticCtor: Return\n");
+    DbgPrint("ml_Tile_staticCtor: Return");
 }
 
-void ml_Recipes_staticCtor() {
+int* quicksoil_instance = (int*)malloc(0x34u);
 
+int ml_Recipes_staticCtor(int a1) {
+    DbgPrint("ml_Recipes_staticCtor: Entry\n");
+    // 	addShapedRecipy(new ItemInstance(Tile::wood, 4, 0), //
+    //	L"sczg",
+    //	L"#", //
+    //
+    //	L'#', new ItemInstance(Tile::treeTrunk, 1, 0),
+    //	L'S');
+    DbgPrint("ml_Recipes_staticCtor: check 1\n");
+    ((void (*)(int*, int*, int, int))0x825383F8)(quicksoil_instance, quicksoil, 1, 1); // ItemInstance(v125, dword_82A0000C, 1, 1);
+    // ((void (*)(int*, int*, int, int))0x825383F8)(quicksoil_instance, *(int**)(0x829FFFDC), 1, 1); // ItemInstance(v125, dword_82A0000C, 1, 1);
+    DbgPrint("ml_Recipes_staticCtor: check 2\n");
+    ((void (*)(int, int*, const wchar_t*, const wchar_t*, const wchar_t*, int*, const wchar_t*))0x825C13B8)(a1, quicksoil_instance, L"stzg", L"#", L"#", *(int**)(0x829FFFA4), L"S"); // Recipes::addShapedRecipy(a1, v10, &unk_820611FC, &unk_82038870, 35, Tile::treeTrunk, 83);
+    ((void (*)(int))0x825C08F0)(a1); // Recipes::buildRecipeIngredientsArray_void_(a1);
+    DbgPrint("ml_Recipes_staticCtor: Return\n");
+    return a1;
 }
 
 void ml_ModInit() {
@@ -73,6 +110,8 @@ int MinecraftWorld_RunStaticCtors() {
     int v1 = ((int (*)(int))0x825AFE40)(v0); // MaterialColor::staticCtor
     ((int (*)(int))0x82521288)(v1); // Material::staticCtor
     int v2 = ((int (*)(void))0x82514698)(); // Tile::staticCtor
+    DbgPrint("MinecraftWorld_RunStaticCtors: Calling ml_Tile_staticCtor ...\n");
+    ml_Tile_staticCtor();
     int v3 = ((int (*)(int))0x826069D0)(v2); // HatchetItem::staticCtor
     int v4 = ((int (*)(int))0x82606CD0)(v3); // PickaxeItem::staticCtor
     int v5 = ((int (*)(int))0x82606F78)(v4); // ShovelItem::staticCtor
@@ -81,7 +120,9 @@ int MinecraftWorld_RunStaticCtors() {
     int v8 = ((int (*)(int))0x8257A2E0)(v7); // Item::staticCtor
     ((int (*)(int))0x825F8F28)(v8); // FurnaceRecipes::staticCtor
     int v9 = ((int (*)(void))0x825C3D50)(); // Recipes::staticCtor
-    ((int (*)(int))0x82587488)(v9); // Stats::staticCtor
+    DbgPrint("MinecraftWorld_RunStaticCtors: Calling ml_Recipes_staticCtor ...\n");
+    int v9_1 = ml_Recipes_staticCtor(v9);
+    ((int (*)(int))0x82587488)(v9_1); // Stats::staticCtor
     ((int (*)(void))0x825109D0)(); // ServerLevel::staticCtor
     ((int (*)(void))0x8259DDD0)(); // Skeleton::staticCtor
     ((int (*)(void))0x825DBCC0)(); // PigZombie::staticCtor
@@ -91,11 +132,6 @@ int MinecraftWorld_RunStaticCtors() {
     int v12 = ((int (*)(int))0x82579918)(v11); // Item::staticInit_void_
     int v13 = ((int (*)(int))0x82524B98)(v12); // LevelChunk::staticCtor
     int v14 = ((int (*)(int))0x82510948)(v13); // GameType::staticCtor
-    DbgPrint("MinecraftWorld_RunStaticCtors: MinecraftWorld_RunStaticCtors base success\n");
-
-    DbgPrint("MinecraftWorld_RunStaticCtors: Calling ml_Tile_staticCtor ...\n");
-    ml_Tile_staticCtor();
-    //Recipes_staticCtor();
     DbgPrint("MinecraftWorld_RunStaticCtors: Return\n");
     return v14; // GameType::staticCtor
 }
